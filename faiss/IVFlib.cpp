@@ -15,9 +15,9 @@
 #include <faiss/MetaIndexes.h>
 #include <faiss/impl/FaissAssert.h>
 #include <faiss/utils/utils.h>
-#include <faiss/myalloc.h>
+#include <faiss/tm_alloc.h>
 
-using namespace ocl;
+using namespace TmAllocator;
 
 namespace faiss {
 namespace ivflib {
@@ -173,16 +173,13 @@ SlidingIndexWindow::SlidingIndexWindow(Index* index) : index(index) {
     sizes.resize(nlist);
 }
 
-//std::vector<std::vector<uint8_t,allocator<uint8_t>>,allocator<std::vector<uint8_t,allocator<uint8_t>>>> vec_t;
 
-
-
-//std::vector<uint8_t,allocator<uint8_t>>
+#ifdef ALLOC_VECTOR
 template <class T>
 static void shift_and_add(
-        std::vector<T,allocator<T>>& dst,
+        std::vector<T,tm_allocator<T>>& dst,
         size_t remove,
-        const std::vector<T,allocator<T>>& src) {
+        const std::vector<T,tm_allocator<T>>& src) {
     if (remove > 0)
         memmove(dst.data(),
                 dst.data() + remove,
@@ -193,16 +190,28 @@ static void shift_and_add(
 }
 
 template <class T>
-
-//std::vector<T,allocator<T>>
-#if 0
-static void remove_from_begin(std::vector<T>& v, size_t remove) {
+static void remove_from_begin(std::vector<T,tm_allocator<T>>& v, size_t remove) {
     if (remove > 0)
         v.erase(v.begin(), v.begin() + remove);
 }
 
 #else
-static void remove_from_begin(std::vector<T,allocator<T>>& v, size_t remove) {
+template <class T>
+static void shift_and_add(
+        std::vector<T>& dst,
+        size_t remove,
+        const std::vector<T>& src) {
+    if (remove > 0)
+        memmove(dst.data(),
+                dst.data() + remove,
+                (dst.size() - remove) * sizeof(T));
+    size_t insert_point = dst.size() - remove;
+    dst.resize(insert_point + src.size());
+    memcpy(dst.data() + insert_point, src.data(), src.size() * sizeof(T));
+}
+
+template <class T>
+static void remove_from_begin(std::vector<T>& v, size_t remove) {
     if (remove > 0)
         v.erase(v.begin(), v.begin() + remove);
 }

@@ -12,15 +12,16 @@
 namespace ocl
 {
     template<class T>
-    inline T* _allocate(ptrdiff_t size, T*)
+    inline T* _allocate(std::size_t n)
     {
        // set_new_handler(0);
-        T* tmp = (T*)(::operator new((size_t)(size * sizeof(T))));
-        if (tmp == 0)
-        {
-            std::cerr << "out of memory" << std::endl;
+        if (auto p = static_cast<T*>(std::malloc(n*sizeof(T)))) {
+            report(p, n);
+            return p;
         }
-        return tmp;
+
+        throw std::bad_alloc();
+       
     }
  
     template<class T>

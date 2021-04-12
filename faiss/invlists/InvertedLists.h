@@ -17,9 +17,9 @@
 
 #include <faiss/Index.h>
 #include <vector>
-#include <faiss/myalloc.h>
+#include <faiss/tm_alloc.h>
 
-using namespace ocl;
+using namespace TmAllocator;
 
 namespace faiss {
 
@@ -192,11 +192,14 @@ struct InvertedLists {
 
 /// simple (default) implementation as an array of inverted lists
 struct ArrayInvertedLists : InvertedLists {
-    std::vector<std::vector<uint8_t,allocator<uint8_t>>,allocator<std::vector<uint8_t,allocator<uint8_t>>>> codes;
-    std::vector<std::vector<idx_t,allocator<idx_t>>,allocator<std::vector<idx_t,allocator<idx_t>>>> ids;
-    //std::vector<std::vector<uint8_t>> codes; // binary codes, size nlist
-    //std::vector<std::vector<idx_t>> ids;     ///< Inverted lists for indexes
 
+#ifdef ALLOC_VECTOR
+    std::vector<std::vector<uint8_t,tm_allocator<uint8_t>>,tm_allocator<std::vector<uint8_t,tm_allocator<uint8_t>>>> codes;
+    std::vector<std::vector<idx_t,tm_allocator<idx_t>>,tm_allocator<std::vector<idx_t,tm_allocator<idx_t>>>> ids;
+#else
+    std::vector<std::vector<uint8_t>> codes; // binary codes, size nlist
+    std::vector<std::vector<idx_t>> ids;     ///< Inverted lists for indexes
+#endif
     ArrayInvertedLists(size_t nlist, size_t code_size);
 
     size_t list_size(size_t list_no) const override;
