@@ -15,6 +15,9 @@
 #include <faiss/MetaIndexes.h>
 #include <faiss/impl/FaissAssert.h>
 #include <faiss/utils/utils.h>
+#include <faiss/myalloc.h>
+
+using namespace ocl;
 
 namespace faiss {
 namespace ivflib {
@@ -170,11 +173,16 @@ SlidingIndexWindow::SlidingIndexWindow(Index* index) : index(index) {
     sizes.resize(nlist);
 }
 
+//std::vector<std::vector<uint8_t,allocator<uint8_t>>,allocator<std::vector<uint8_t,allocator<uint8_t>>>> vec_t;
+
+
+
+//std::vector<uint8_t,allocator<uint8_t>>
 template <class T>
 static void shift_and_add(
-        std::vector<T>& dst,
+        std::vector<T,allocator<T>>& dst,
         size_t remove,
-        const std::vector<T>& src) {
+        const std::vector<T,allocator<T>>& src) {
     if (remove > 0)
         memmove(dst.data(),
                 dst.data() + remove,
@@ -185,10 +193,21 @@ static void shift_and_add(
 }
 
 template <class T>
+
+//std::vector<T,allocator<T>>
+#if 0
 static void remove_from_begin(std::vector<T>& v, size_t remove) {
     if (remove > 0)
         v.erase(v.begin(), v.begin() + remove);
 }
+
+#else
+static void remove_from_begin(std::vector<T,allocator<T>>& v, size_t remove) {
+    if (remove > 0)
+        v.erase(v.begin(), v.begin() + remove);
+}
+
+#endif
 
 void SlidingIndexWindow::step(const Index* sub_index, bool remove_oldest) {
     FAISS_THROW_IF_NOT_MSG(

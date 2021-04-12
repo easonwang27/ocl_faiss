@@ -30,8 +30,7 @@ else()
 endif()
 
 include(FetchContent)
-FetchContent_Declare(googletest
-  URL "https://github.com/google/googletest/archive/release-1.10.0.tar.gz")
+FetchContent_Declare(googletest URL "/home/eason/work/lib/release-1.10.0.tar.gz")
 set(BUILD_GMOCK CACHE BOOL OFF)
 set(INSTALL_GTEST CACHE BOOL OFF)
 FetchContent_MakeAvailable(googletest)

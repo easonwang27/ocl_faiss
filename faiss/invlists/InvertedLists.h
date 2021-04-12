@@ -17,6 +17,9 @@
 
 #include <faiss/Index.h>
 #include <vector>
+#include <faiss/myalloc.h>
+
+using namespace ocl;
 
 namespace faiss {
 
@@ -189,8 +192,10 @@ struct InvertedLists {
 
 /// simple (default) implementation as an array of inverted lists
 struct ArrayInvertedLists : InvertedLists {
-    std::vector<std::vector<uint8_t>> codes; // binary codes, size nlist
-    std::vector<std::vector<idx_t>> ids;     ///< Inverted lists for indexes
+    std::vector<std::vector<uint8_t,allocator<uint8_t>>,allocator<std::vector<uint8_t,allocator<uint8_t>>>> codes;
+    std::vector<std::vector<idx_t,allocator<idx_t>>,allocator<std::vector<idx_t,allocator<idx_t>>>> ids;
+    //std::vector<std::vector<uint8_t>> codes; // binary codes, size nlist
+    //std::vector<std::vector<idx_t>> ids;     ///< Inverted lists for indexes
 
     ArrayInvertedLists(size_t nlist, size_t code_size);
 
@@ -247,6 +252,9 @@ struct ReadOnlyInvertedLists : InvertedLists {
 /// Horizontal stack of inverted lists
 struct HStackInvertedLists : ReadOnlyInvertedLists {
     std::vector<const InvertedLists*> ils;
+
+   // std::vector<const InvertedLists*,allocator<const InvertedLists*>> ils;
+
 
     /// build InvertedLists by concatenating nil of them
     HStackInvertedLists(int nil, const InvertedLists** ils);

@@ -47,6 +47,9 @@
 #include <faiss/IndexBinaryHNSW.h>
 #include <faiss/IndexBinaryHash.h>
 #include <faiss/IndexBinaryIVF.h>
+#include <faiss/myalloc.h>
+
+using namespace ocl;
 
 namespace faiss {
 
@@ -330,7 +333,8 @@ static void read_direct_map(DirectMap* dm, IOReader* f) {
 static void read_ivf_header(
         IndexIVF* ivf,
         IOReader* f,
-        std::vector<std::vector<Index::idx_t>>* ids = nullptr) {
+        //std::vector<std::vector<Index::idx_t>>* ids = nullptr) {
+         std::vector<std::vector<Index::idx_t,allocator<Index::idx_t>>,allocator<std::vector<Index::idx_t,allocator<Index::idx_t>>>>* ids = nullptr) {
     read_index_header(ivf, f);
     READ1(ivf->nlist);
     READ1(ivf->nprobe);
@@ -344,10 +348,16 @@ static void read_ivf_header(
     read_direct_map(&ivf->direct_map, f);
 }
 
+//std::vector<std::vector<idx_t>> ids; 
+//std::vector<std::vector<Index::idx_t>>
+//std::vector<std::vector<Index::idx_t,allocator<Index::idx_t>>,allocator<std::vector<Index::idx_t,allocator<Index::idx_t>>>> 
+//set_array_invlist
+
 // used for legacy formats
 static ArrayInvertedLists* set_array_invlist(
         IndexIVF* ivf,
-        std::vector<std::vector<Index::idx_t>>& ids) {
+        //std::vector<std::vector<Index::idx_t>>& ids) {
+        std::vector<std::vector<Index::idx_t,allocator<Index::idx_t>>,allocator<std::vector<Index::idx_t,allocator<Index::idx_t>>>>& ids) {
     ArrayInvertedLists* ail =
             new ArrayInvertedLists(ivf->nlist, ivf->code_size);
     std::swap(ail->ids, ids);
@@ -364,7 +374,8 @@ static IndexIVFPQ* read_ivfpq(IOReader* f, uint32_t h, int io_flags) {
             : nullptr;
     IndexIVFPQ* ivpq = ivfpqr ? ivfpqr : new IndexIVFPQ();
 
-    std::vector<std::vector<Index::idx_t>> ids;
+  //  std::vector<std::vector<Index::idx_t>> ids;
+    std::vector<std::vector<Index::idx_t,allocator<Index::idx_t>>,allocator<std::vector<Index::idx_t,allocator<Index::idx_t>>>> ids;
     read_ivf_header(ivpq, f, legacy ? &ids : nullptr);
     READ1(ivpq->by_residual);
     READ1(ivpq->code_size);
@@ -463,7 +474,9 @@ Index* read_index(IOReader* f, int io_flags) {
         idx = idxp;
     } else if (h == fourcc("IvFl") || h == fourcc("IvFL")) { // legacy
         IndexIVFFlat* ivfl = new IndexIVFFlat();
-        std::vector<std::vector<Index::idx_t>> ids;
+       // std::vector<std::vector<Index::idx_t>> ids;
+        std::vector<std::vector<Index::idx_t,allocator<Index::idx_t>>,allocator<std::vector<Index::idx_t,allocator<Index::idx_t>>>> ids;
+
         read_ivf_header(ivfl, f, &ids);
         ivfl->code_size = ivfl->d * sizeof(float);
         ArrayInvertedLists* ail = set_array_invlist(ivfl, ids);
@@ -520,7 +533,8 @@ Index* read_index(IOReader* f, int io_flags) {
         idx = idxl;
     } else if (h == fourcc("IvSQ")) { // legacy
         IndexIVFScalarQuantizer* ivsc = new IndexIVFScalarQuantizer();
-        std::vector<std::vector<Index::idx_t>> ids;
+        //std::vector<std::vector<Index::idx_t>> ids;
+        std::vector<std::vector<Index::idx_t,allocator<Index::idx_t>>,allocator<std::vector<Index::idx_t,allocator<Index::idx_t>>>> ids;
         read_ivf_header(ivsc, f, &ids);
         read_ScalarQuantizer(&ivsc->sq, f);
         READ1(ivsc->code_size);
@@ -682,6 +696,8 @@ Index* read_index(IOReader* f, int io_flags) {
                 fourcc_inv_printable(h).c_str());
         idx = nullptr;
     }
+
+
     return idx;
 }
 

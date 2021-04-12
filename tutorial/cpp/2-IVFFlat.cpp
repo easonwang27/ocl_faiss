@@ -44,14 +44,16 @@ int main() {
     faiss::IndexFlatL2 quantizer(d); // the other index
     faiss::IndexIVFFlat index(&quantizer, d, nlist);
     assert(!index.is_trained);
+    printf("==============>train\n");
     index.train(nb, xb);
     assert(index.is_trained);
+    printf("==============>add\n");
     index.add(nb, xb);
 
     { // search xq
         idx_t* I = new idx_t[k * nq];
         float* D = new float[k * nq];
-
+        printf("==============>search\n");
         index.search(nq, xq, k, D, I);
 
         printf("I=\n");
